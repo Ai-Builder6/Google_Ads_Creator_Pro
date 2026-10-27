@@ -1709,26 +1709,35 @@ Google Tag ID: AW-18539302675
         </div>
       </div>
 
-      {/* Google Tag (AW-18539302675) Conversion Tracking Card */}
+      {/* Google Tag (AW-18539302675) & AdSense (ca-pub-8415242080067854) Verification Card */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Google Tag Installed in App Header · ID: AW-18539302675</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Google Tag Active · ID: AW-18539302675</span>
+              </div>
+              <div className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>
+                  Google AdSense Meta Active · ca-pub-8415242080067854
+                </span>
+              </div>
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 mt-0.5">
-              Google Ads Conversion Tracking (AW-18539302675)
+            <h3 className="text-sm font-semibold text-slate-900 mt-1">
+              Google Ads Tag (AW-18539302675) & AdSense Account (ca-pub-8415242080067854)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Your global <code className="font-mono">gtag.js</code> snippet (
-              <code className="font-mono">AW-18539302675</code>) is active in{" "}
-              <code className="font-mono">index.html</code>. Make sure the same
-              tag is also placed on{" "}
+              Both <code className="font-mono">gtag.js (AW-18539302675)</code>{" "}
+              and{" "}
               <code className="font-mono">
-                https://app.tidyupscleaning.com/booking
+                &lt;meta name=&quot;google-adsense-account&quot;
+                content=&quot;ca-pub-8415242080067854&quot;&gt;
               </code>{" "}
-              to track completed cleaning bookings.
+              are installed inside the <code className="font-mono">&lt;head&gt;</code>{" "}
+              of <code className="font-mono">index.html</code> (and bundled into
+              your Google Drive project <code className="font-mono">.zip</code>).
             </p>
           </div>
           <button
