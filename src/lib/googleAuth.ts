@@ -11,15 +11,22 @@ import firebaseConfig from "../../firebase-applet-config.json";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export const SCOPES = ["https://www.googleapis.com/auth/adwords"];
+export const SCOPES = [
+  "https://www.googleapis.com/auth/adwords",
+  "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/spreadsheets",
+];
 
-const provider = new GoogleAuthProvider();
-for (const scope of SCOPES) {
-  provider.addScope(scope);
+function createConfiguredProvider(forceAccountPicker = false) {
+  const provider = new GoogleAuthProvider();
+  for (const scope of SCOPES) {
+    provider.addScope(scope);
+  }
+  provider.setCustomParameters({
+    prompt: forceAccountPicker ? "select_account consent" : "consent",
+  });
+  return provider;
 }
-provider.setCustomParameters({
-  prompt: "consent",
-});
 
 // Flag to indicate if we are in the middle of a sign-in flow.
 let isSigningIn = false;
@@ -45,16 +52,19 @@ export const initAuth = (
   });
 };
 
-export const googleSignIn = async (): Promise<{
+export const googleSignIn = async (
+  forceAccountPicker = false
+): Promise<{
   user: User;
   accessToken: string;
 } | null> => {
   try {
     isSigningIn = true;
+    const provider = createConfiguredProvider(forceAccountPicker);
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
-      throw new Error("Failed to get Google Ads access token from Firebase Auth");
+      throw new Error("Failed to get Google access token from Firebase Auth");
     }
 
     cachedAccessToken = credential.accessToken;

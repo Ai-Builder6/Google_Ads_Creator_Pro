@@ -208,7 +208,7 @@ Moving out? Leave the cleaning to Tidyups. Get your Edmonton move-out quote toda
 Built-up dirt and grime? Our deep cleaning gives your home a fresh start. Book today.
 Make moving easier with thorough kitchen, bathroom and floor cleaning. Get a quote.
 From baseboards to bathroom buildup, we handle the details. Book your deep clean.
-Need move-out or deep cleaning in Edmonton? Call Tidyups at 780-718-5092 today.`;
+Need move-out or deep cleaning in Edmonton? Call Tidyups at 587-742-2500 today.`;
 
 export const USER_NEGATIVE_KEYWORDS = [
   "jobs",
@@ -277,7 +277,7 @@ export const USER_FIVE_DESCRIPTIONS: DescriptionAsset[] = [
   },
   {
     id: "ud-5",
-    text: "Need move-out or deep cleaning in Edmonton? Call Tidyups at 780-718-5092 today.",
+    text: "Need move-out or deep cleaning in Edmonton? Call Tidyups at 587-742-2500 today.",
     pinnedField: "UNSPECIFIED",
     angle: "Edmonton Direct Call CTA",
   },
@@ -387,10 +387,10 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
     adGroupName: "Edmonton Move-Out & Deep Cleaning",
     serviceType: "Move-Out, End of Tenancy & Deep Cleaning",
     location: "Edmonton & South Edmonton",
-    promoOffer: "Instant Online Quote or Call 780-718-5092 Today",
+    promoOffer: "Instant Online Quote or Call 587-742-2500 Today",
     brandTone: "Trustworthy, Warm & Action-Oriented",
     finalUrl: "https://app.tidyupscleaning.com/booking",
-    phoneNumber: "780-718-5092",
+    phoneNumber: "587-742-2500",
     utmSource: "google",
     utmMedium: "cpc",
     utmCampaign: "tidyups_edmonton_moveout_deep",
@@ -455,7 +455,7 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
       },
       {
         id: "ec-h6",
-        text: "Call TidyUps: 780-718-5092",
+        text: "Call TidyUps: 587-742-2500",
         pinnedField: "UNSPECIFIED",
         category: "Booking CTA",
       },
@@ -535,12 +535,12 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
         id: "sl-4",
         linkText: "South Edmonton Cleaners",
         description1: "Serving South Edmonton & all YEG",
-        description2: "Call 780-718-5092 or book online",
+        description2: "Call 587-742-2500 or book online",
         finalUrl: "https://app.tidyupscleaning.com/booking",
       },
     ],
     callouts: [
-      "Call 780-718-5092 Today",
+      "Call 587-742-2500 Today",
       "Edmonton & South Edmonton",
       "Baseboards to Bathrooms",
       "Book Online in 60 Seconds",
@@ -559,10 +559,10 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
     adGroupName: "Ad Group 1: Move-Out & Rental Cleaning Edmonton",
     serviceType: "Move-In / Move-Out & End of Tenancy Cleaning",
     location: "Edmonton & South Edmonton",
-    promoOffer: "Landlord Inspection Checklist & Instant Quote (780-718-5092)",
+    promoOffer: "Landlord Inspection Checklist & Instant Quote (587-742-2500)",
     brandTone: "Reliable, Thorough & Urgency-Focused",
     finalUrl: "https://app.tidyupscleaning.com/booking",
-    phoneNumber: "780-718-5092",
+    phoneNumber: "587-742-2500",
     utmSource: "google",
     utmMedium: "cpc",
     utmCampaign: "tidyups_move_out_edmonton",
@@ -630,7 +630,7 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
       },
       {
         id: "mo-h10",
-        text: "Call TidyUps: 780-718-5092",
+        text: "Call TidyUps: 587-742-2500",
         pinnedField: "UNSPECIFIED",
         category: "Booking CTA",
       },
@@ -674,14 +674,14 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
         id: "sl-4",
         linkText: "South Edmonton Move-Out",
         description1: "Fast crews across South YEG",
-        description2: "Call 780-718-5092 or book online",
+        description2: "Call 587-742-2500 or book online",
         finalUrl: "https://app.tidyupscleaning.com/booking",
       },
     ],
     callouts: [
       "End of Tenancy Specialists",
       "House & Apartment Move-Out",
-      "Call 780-718-5092 Today",
+      "Call 587-742-2500 Today",
       "Edmonton & South Edmonton",
     ],
     strategySummary:
@@ -698,10 +698,10 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
     adGroupName: "Ad Group 2: Deep House & Apartment Cleaning Edmonton",
     serviceType: "Top-to-Bottom Deep House & Apartment Cleaning",
     location: "Edmonton & South Edmonton",
-    promoOffer: "Baseboards, Kitchens & Bathroom Buildup Handled (780-718-5092)",
+    promoOffer: "Baseboards, Kitchens & Bathroom Buildup Handled (587-742-2500)",
     brandTone: "Detail-Obsessed, Premium & Refreshing",
     finalUrl: "https://app.tidyupscleaning.com/booking",
-    phoneNumber: "780-718-5092",
+    phoneNumber: "587-742-2500",
     utmSource: "google",
     utmMedium: "cpc",
     utmCampaign: "tidyups_deep_clean_edmonton",
@@ -769,7 +769,7 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
       },
       {
         id: "dc-h10",
-        text: "Call TidyUps: 780-718-5092",
+        text: "Call TidyUps: 587-742-2500",
         pinnedField: "UNSPECIFIED",
         category: "Booking CTA",
       },
@@ -813,14 +813,14 @@ export const TIDY_UP_PRESETS: Record<string, RsaCampaign> = {
         id: "sl-4",
         linkText: "South Edmonton Deep Clean",
         description1: "Serving South Edmonton & all YEG",
-        description2: "Call 780-718-5092 or book online",
+        description2: "Call 587-742-2500 or book online",
         finalUrl: "https://app.tidyupscleaning.com/booking",
       },
     ],
     callouts: [
       "Baseboards to Bathrooms",
       "Built-Up Grime Removed",
-      "Call 780-718-5092 Today",
+      "Call 587-742-2500 Today",
       "Book Online in 60 Seconds",
     ],
     strategySummary:
@@ -914,7 +914,7 @@ export function instantParseAndSortDump(rawInput: string): {
   const extractedDescriptions: string[] = [];
 
   let inNegativeSection = false;
-  let detectedPhone = "780-718-5092";
+  let detectedPhone = "587-742-2500";
   let detectedLocation = "Edmonton";
 
   const phoneRegex = /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/;
@@ -1389,3 +1389,106 @@ export function calculateAdStrength(campaign: RsaCampaign): AdStrengthAudit {
     checks,
   };
 }
+
+/**
+ * Updates the phone number and target city/location across the entire campaign
+ * (Headlines, 5 Descriptions, Positive Keywords, Sitelinks, Callouts, Display Paths, and Campaign Name)
+ * while preserving Google Ads character limits (Headlines <= 30c, Descriptions <= 90c).
+ */
+export function applyPhoneAndLocationToCampaign(
+  campaign: RsaCampaign,
+  newPhoneRaw: string,
+  newLocationRaw: string
+): RsaCampaign {
+  const newPhone = newPhoneRaw.trim() || "587-742-2500";
+  const newLocation = newLocationRaw.trim() || "Edmonton";
+
+  // Extract primary city name (e.g., "Edmonton & South Edmonton" -> "Edmonton", "Calgary & Area" -> "Calgary")
+  const extractPrimaryCity = (loc: string) =>
+    loc
+      .split(/[,&|/]/)[0]
+      .replace(/\b(south|north|east|west|greater|area|all)\b/gi, "")
+      .trim() || loc.trim();
+
+  const oldPrimaryCity = extractPrimaryCity(campaign.location || "Edmonton");
+  const newPrimaryCity = extractPrimaryCity(newLocation);
+
+  const phoneRegex = /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/g;
+  const cityRegex =
+    oldPrimaryCity.length >= 3
+      ? new RegExp(
+          oldPrimaryCity.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          "gi"
+        )
+      : null;
+
+  const swapText = (input: string, maxLen?: number): string => {
+    let out = input.replace(phoneRegex, newPhone);
+    if (
+      campaign.phoneNumber &&
+      campaign.phoneNumber.trim() &&
+      out.includes(campaign.phoneNumber.trim())
+    ) {
+      out = out.split(campaign.phoneNumber.trim()).join(newPhone);
+    }
+    if (cityRegex && oldPrimaryCity.toLowerCase() !== newPrimaryCity.toLowerCase()) {
+      out = out.replace(cityRegex, (match) => {
+        // Preserve lowercase if original was all lowercase (e.g., in keywords)
+        if (match === match.toLowerCase()) {
+          return newPrimaryCity.toLowerCase();
+        }
+        return newPrimaryCity;
+      });
+    }
+    if (maxLen && out.length > maxLen) {
+      out = out.slice(0, maxLen).trim();
+    }
+    return out;
+  };
+
+  const slugifyCity = newPrimaryCity
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 15);
+
+  const oldCitySlug = oldPrimaryCity
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return {
+    ...campaign,
+    phoneNumber: newPhone,
+    location: newLocation,
+    campaignName: swapText(campaign.campaignName),
+    adGroupName: swapText(campaign.adGroupName),
+    promoOffer: swapText(campaign.promoOffer),
+    path1:
+      campaign.path1.toLowerCase() === oldCitySlug && slugifyCity
+        ? slugifyCity
+        : campaign.path1,
+    path2:
+      campaign.path2.toLowerCase() === oldCitySlug && slugifyCity
+        ? slugifyCity
+        : campaign.path2,
+    targetKeywords: campaign.targetKeywords.map((kw) => swapText(kw)),
+    headlines: campaign.headlines.map((h) => ({
+      ...h,
+      text: swapText(h.text, 30),
+    })),
+    descriptions: campaign.descriptions.map((d) => ({
+      ...d,
+      text: swapText(d.text, 90),
+    })),
+    callouts: campaign.callouts.map((c) => swapText(c, 25)),
+    sitelinks: campaign.sitelinks.map((s) => ({
+      ...s,
+      linkText: swapText(s.linkText, 25),
+      description1: swapText(s.description1, 35),
+      description2: swapText(s.description2, 35),
+    })),
+    updatedAt: new Date().toISOString(),
+  };
+}
+

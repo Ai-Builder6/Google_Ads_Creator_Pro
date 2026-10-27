@@ -32,7 +32,7 @@ import { PasteAndSortStudio } from "./components/PasteAndSortStudio";
 import { CleaningImageStudio } from "./components/CleaningImageStudio";
 import { GoogleAdsLauncherView } from "./components/GoogleAdsLauncherView";
 
-const STORAGE_KEY = "tidy_up_rsa_saved_campaigns_v3";
+const STORAGE_KEY = "tidy_up_rsa_saved_campaigns_v4";
 
 export default function App() {
   const [activeView, setActiveView] = useState<
@@ -146,7 +146,7 @@ export default function App() {
           negativeKeywords: campaign.negativeKeywords,
           brandTone: campaign.brandTone,
           finalUrl: campaign.finalUrl,
-          phoneNumber: campaign.phoneNumber || "780-718-5092",
+          phoneNumber: campaign.phoneNumber || "587-742-2500",
           pinBrandOrCta,
         }),
       });
@@ -1446,7 +1446,9 @@ export default function App() {
       <footer className="mt-12 border-t border-slate-200 bg-white py-4 px-6">
         <div className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            TidyUps Cleaning (Edmonton, AB · 780-718-5092) · Responsive Search Ad Studio ·{" "}
+            TidyUps Cleaning ({campaign.location || "Edmonton, AB"} ·{" "}
+            {campaign.phoneNumber || "587-742-2500"}) · Responsive Search Ad
+            Studio ·{" "}
             <a
               href="https://app.tidyupscleaning.com/booking"
               target="_blank"

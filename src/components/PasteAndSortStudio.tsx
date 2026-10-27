@@ -94,7 +94,7 @@ export const PasteAndSortStudio: React.FC<PasteAndSortStudioProps> = ({
         body: JSON.stringify({
           rawInput: rawText,
           finalUrl: campaign.finalUrl,
-          phoneNumber: campaign.phoneNumber || "780-718-5092",
+          phoneNumber: campaign.phoneNumber || "587-742-2500",
         }),
       });
 
