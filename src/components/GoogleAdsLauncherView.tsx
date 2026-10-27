@@ -38,10 +38,12 @@ import {
   getAccessToken,
   logout,
 } from "../lib/googleAuth";
+import { PublicPageRoute } from "./PublicSitePages";
 
 interface GoogleAdsLauncherViewProps {
   campaign: RsaCampaign;
   onUpdateCampaignMeta: (updates: Partial<RsaCampaign>) => void;
+  onOpenPublicPage?: (page: PublicPageRoute) => void;
 }
 
 const DRIVE_FOLDER_COLORS = [
@@ -55,6 +57,7 @@ const DRIVE_FOLDER_COLORS = [
 export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
   campaign,
   onUpdateCampaignMeta,
+  onOpenPublicPage,
 }) => {
   const [dailyBudgetCad, setDailyBudgetCad] = useState<number>(
     campaign.dailyBudgetCad || 25
@@ -1758,6 +1761,121 @@ Google Tag ID: AW-18539302675
           >
             Send Test Conversion Ping
           </button>
+        </div>
+
+        {/* Public Routes on ads.tidyupscleaning.com (/booking, /support, /privacy, /T&C) */}
+        <div className="pt-3 border-t border-slate-100 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs font-semibold text-slate-800">
+              Active Public Endpoints on{" "}
+              <code className="font-mono text-teal-800">
+                ads.tidyupscleaning.com
+              </code>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                onUpdateCampaignMeta({
+                  finalUrl: "https://ads.tidyupscleaning.com/booking",
+                  sitelinks: [
+                    {
+                      id: "sl-ads-1",
+                      linkText: "Book Cleaning Online",
+                      description1: "Instant flat-rate quote in 60s",
+                      description2: "Move-out & deep clean booking",
+                      finalUrl: "https://ads.tidyupscleaning.com/booking",
+                    },
+                    {
+                      id: "sl-ads-2",
+                      linkText: "Customer Support Center",
+                      description1: `Call ${
+                        campaign.phoneNumber || "587-742-2500"
+                      } or message us`,
+                      description2: "7 days a week local support",
+                      finalUrl: "https://ads.tidyupscleaning.com/support",
+                    },
+                    {
+                      id: "sl-ads-3",
+                      linkText: "Terms & Guarantee",
+                      description1: "24-hour re-clean guarantee",
+                      description2: "Transparent service terms",
+                      finalUrl: "https://ads.tidyupscleaning.com/T&C",
+                    },
+                    {
+                      id: "sl-ads-4",
+                      linkText: "Privacy & Security",
+                      description1: "Protected customer booking data",
+                      description2: "Official TidyUps privacy policy",
+                      finalUrl: "https://ads.tidyupscleaning.com/privacy",
+                    },
+                  ],
+                })
+              }
+              className="px-2.5 py-1 rounded-md bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-semibold hover:bg-teal-100/70 transition-colors"
+            >
+              Set Campaign & Sitelink URLs to ads.tidyupscleaning.com
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {(
+              [
+                {
+                  id: "booking" as PublicPageRoute,
+                  path: "/booking",
+                  url: "https://ads.tidyupscleaning.com/booking",
+                  desc: "Instant Quote & Booking Page",
+                },
+                {
+                  id: "support" as PublicPageRoute,
+                  path: "/support",
+                  url: "https://ads.tidyupscleaning.com/support",
+                  desc: "Customer Support & FAQ Center",
+                },
+                {
+                  id: "privacy" as PublicPageRoute,
+                  path: "/privacy",
+                  url: "https://ads.tidyupscleaning.com/privacy",
+                  desc: "OAuth, Ads & AdSense Privacy Policy",
+                },
+                {
+                  id: "tc" as PublicPageRoute,
+                  path: "/T&C",
+                  url: "https://ads.tidyupscleaning.com/T&C",
+                  desc: "Terms, Cancellation & Guarantee",
+                },
+              ] as const
+            ).map((route) => (
+              <div
+                key={route.id}
+                className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between gap-2"
+              >
+                <div>
+                  <div className="text-xs font-bold font-mono text-slate-900">
+                    ads.tidyupscleaning.com{route.path}
+                  </div>
+                  <div className="text-[11px] text-slate-500">{route.desc}</div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onOpenPublicPage && onOpenPublicPage(route.id)}
+                    className="flex-1 py-1 px-2 rounded bg-white border border-slate-300 hover:border-teal-600 text-[11px] font-semibold text-slate-800"
+                  >
+                    Open {route.path}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(route.url)}
+                    className="py-1 px-2 rounded bg-slate-200/70 hover:bg-slate-200 text-[11px] font-medium text-slate-700"
+                    title={`Copy ${route.url}`}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

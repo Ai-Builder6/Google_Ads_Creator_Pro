@@ -31,13 +31,71 @@ import { SavedCampaignsView } from "./components/SavedCampaignsView";
 import { PasteAndSortStudio } from "./components/PasteAndSortStudio";
 import { CleaningImageStudio } from "./components/CleaningImageStudio";
 import { GoogleAdsLauncherView } from "./components/GoogleAdsLauncherView";
+import {
+  PublicSitePages,
+  PublicPageRoute,
+} from "./components/PublicSitePages";
 
 const STORAGE_KEY = "tidy_up_rsa_saved_campaigns_v4";
+
+function detectPublicRoute(pathname: string): PublicPageRoute | null {
+  const clean = decodeURIComponent(pathname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\/+$/, "");
+  if (clean === "/booking") return "booking";
+  if (clean === "/support") return "support";
+  if (clean === "/privacy") return "privacy";
+  if (
+    clean === "/t&c" ||
+    clean === "/tc" ||
+    clean === "/terms" ||
+    clean === "/terms-and-conditions"
+  ) {
+    return "tc";
+  }
+  return null;
+}
 
 export default function App() {
   const [activeView, setActiveView] = useState<
     "paste_sort" | "builder" | "images" | "launch" | "api"
   >("launch");
+
+  const [publicPage, setPublicPage] = useState<PublicPageRoute | null>(() =>
+    typeof window !== "undefined"
+      ? detectPublicRoute(window.location.pathname)
+      : null
+  );
+
+  const navigateToPublicPage = (page: PublicPageRoute | null) => {
+    setPublicPage(page);
+    if (typeof window !== "undefined") {
+      const targetPath =
+        page === "booking"
+          ? "/booking"
+          : page === "support"
+          ? "/support"
+          : page === "privacy"
+          ? "/privacy"
+          : page === "tc"
+          ? "/T&C"
+          : "/";
+      try {
+        window.history.pushState({}, "", targetPath);
+      } catch {
+        // ignore history error in sandboxed frames
+      }
+    }
+  };
+
+  useEffect(() => {
+    const onPopState = () => {
+      setPublicPage(detectPublicRoute(window.location.pathname));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const [campaign, setCampaign] = useState<RsaCampaign>(
     () => TIDY_UP_PRESETS.edmonton_combined
@@ -365,9 +423,12 @@ export default function App() {
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <button
               type="button"
-              onClick={() => setActiveView("paste_sort")}
+              onClick={() => {
+                navigateToPublicPage(null);
+                setActiveView("paste_sort");
+              }}
               className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                activeView === "paste_sort"
+                !publicPage && activeView === "paste_sort"
                   ? "text-slate-900 border-b-2 border-teal-700 font-semibold"
                   : ""
               }`}
@@ -376,9 +437,12 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveView("builder")}
+              onClick={() => {
+                navigateToPublicPage(null);
+                setActiveView("builder");
+              }}
               className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                activeView === "builder"
+                !publicPage && activeView === "builder"
                   ? "text-slate-900 border-b-2 border-teal-700 font-semibold"
                   : ""
               }`}
@@ -387,9 +451,12 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveView("images")}
+              onClick={() => {
+                navigateToPublicPage(null);
+                setActiveView("images");
+              }}
               className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                activeView === "images"
+                !publicPage && activeView === "images"
                   ? "text-slate-900 border-b-2 border-teal-700 font-semibold"
                   : ""
               }`}
@@ -398,9 +465,12 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveView("launch")}
+              onClick={() => {
+                navigateToPublicPage(null);
+                setActiveView("launch");
+              }}
               className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                activeView === "launch"
+                !publicPage && activeView === "launch"
                   ? "text-slate-900 border-b-2 border-teal-700 font-semibold"
                   : ""
               }`}
@@ -409,9 +479,12 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveView("api")}
+              onClick={() => {
+                navigateToPublicPage(null);
+                setActiveView("api");
+              }}
               className={`hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 pb-0.5 ${
-                activeView === "api"
+                !publicPage && activeView === "api"
                   ? "text-slate-900 border-b-2 border-teal-700 font-semibold"
                   : ""
               }`}
@@ -472,24 +545,34 @@ export default function App() {
 
       {/* Main Workspace Container */}
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Error Banner if AI call fails */}
-        {aiError && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 text-xs text-rose-800">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>{aiError}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAiError(null)}
-              className="font-medium underline whitespace-nowrap shrink-0"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+        {publicPage ? (
+          <PublicSitePages
+            activePage={publicPage}
+            onSelectPage={(p) => navigateToPublicPage(p)}
+            onBackToStudio={() => navigateToPublicPage(null)}
+            phoneNumber={campaign.phoneNumber || "587-742-2500"}
+            locationName={campaign.location || "Edmonton & Area"}
+          />
+        ) : (
+          <>
+            {/* Error Banner if AI call fails */}
+            {aiError && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 text-xs text-rose-800">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{aiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiError(null)}
+                  className="font-medium underline whitespace-nowrap shrink-0"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
 
-        {/* Preset Switcher & Campaign Context Toolbar */}
+            {/* Preset Switcher & Campaign Context Toolbar */}
         <section className="bg-white border border-slate-200 rounded-xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
@@ -1403,6 +1486,7 @@ export default function App() {
           <GoogleAdsLauncherView
             campaign={campaign}
             onUpdateCampaignMeta={updateCampaignMeta}
+            onOpenPublicPage={(p) => navigateToPublicPage(p)}
           />
         )}
 
@@ -1440,32 +1524,70 @@ export default function App() {
             />
           </div>
         )}
+          </>
+        )}
       </main>
 
-      {/* Clean Footer */}
+      {/* Clean Footer with ads.tidyupscleaning.com Routes (/booking, /support, /privacy, /T&C) */}
       <footer className="mt-12 border-t border-slate-200 bg-white py-4 px-6">
         <div className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
           <div>
             TidyUps Cleaning ({campaign.location || "Edmonton, AB"} ·{" "}
-            {campaign.phoneNumber || "587-742-2500"}) · Responsive Search Ad
-            Studio ·{" "}
-            <a
-              href="https://app.tidyupscleaning.com/booking"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-700 hover:underline font-mono"
-            >
-              app.tidyupscleaning.com/booking
-            </a>
+            {campaign.phoneNumber || "587-742-2500"}) ·{" "}
+            <span className="font-mono text-slate-700">
+              ads.tidyupscleaning.com
+            </span>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href="/booking"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPublicPage("booking");
+              }}
+              className="font-mono text-slate-700 hover:text-teal-700 hover:underline"
+            >
+              /booking
+            </a>
+            <a
+              href="/support"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPublicPage("support");
+              }}
+              className="font-mono text-slate-700 hover:text-teal-700 hover:underline"
+            >
+              /support
+            </a>
+            <a
+              href="/privacy"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPublicPage("privacy");
+              }}
+              className="font-mono text-slate-700 hover:text-teal-700 hover:underline"
+            >
+              /privacy
+            </a>
+            <a
+              href="/T&C"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToPublicPage("tc");
+              }}
+              className="font-mono text-slate-700 hover:text-teal-700 hover:underline"
+            >
+              /T&amp;C
+            </a>
+            <span className="text-slate-300">|</span>
             <button
               type="button"
               onClick={() => setCampaign(TIDY_UP_PRESETS.edmonton_combined)}
               className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900"
             >
               <RotateCcw className="w-3 h-3" />
-              Reset to Edmonton Preset
+              Reset Preset
             </button>
           </div>
         </div>
