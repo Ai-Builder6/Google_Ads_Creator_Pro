@@ -581,6 +581,39 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
         </div>
       </div>
 
+      {/* Google Tag (AW-18539302675) Conversion Tracking Card */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium text-emerald-700 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Google Tag Installed in App Header · ID: AW-18539302675</span>
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mt-0.5">
+              Google Ads Conversion Tracking (AW-18539302675)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Your global <code className="font-mono">gtag.js</code> snippet (<code className="font-mono">AW-18539302675</code>) is active in <code className="font-mono">index.html</code>. Make sure the same tag is also placed on <code className="font-mono">https://app.tidyupscleaning.com/booking</code> to track completed cleaning bookings.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
+                (window as any).gtag("event", "conversion", {
+                  send_to: "AW-18539302675",
+                  value: dailyBudgetCad,
+                  currency: "CAD",
+                });
+              }
+            }}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0"
+          >
+            Send Test Conversion Ping
+          </button>
+        </div>
+      </div>
+
       {/* Bottom Card: Full Atomic Google Ads API googleAds:mutate Inspector */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 bg-slate-50 border-b border-slate-200">
