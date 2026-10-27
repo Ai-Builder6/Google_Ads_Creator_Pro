@@ -37,7 +37,7 @@ const STORAGE_KEY = "tidy_up_rsa_saved_campaigns_v3";
 export default function App() {
   const [activeView, setActiveView] = useState<
     "paste_sort" | "builder" | "images" | "launch" | "api"
-  >("paste_sort");
+  >("launch");
 
   const [campaign, setCampaign] = useState<RsaCampaign>(
     () => TIDY_UP_PRESETS.edmonton_combined

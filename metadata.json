@@ -1,5 +1,5 @@
 {
-  "name": "Tidy Up RSA Studio",
+  "name": "TidyUps RSA Studio",
   "description": "AI-powered Google Ads Responsive Search Ad (RSA) generator, SERP simulator, and Google Ads API payload builder for Tidy Up Cleaning Service.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

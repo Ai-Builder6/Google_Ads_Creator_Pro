@@ -675,9 +675,73 @@ const oauthCallbackHandler = async (
 
 app.get(["/auth/callback", "/auth/callback/"], oauthCallbackHandler);
 
+// Endpoint 7b: List Accessible Google Ads Customer Accounts using OAuth Bearer token
+app.post("/api/google-ads/accessible-customers", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const bearerToken = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+    const { developerToken = "" } = req.body || {};
+
+    const effectiveToken =
+      bearerToken || connectedGoogleAdsSession.accessToken || "";
+    const effectiveDevToken =
+      developerToken.trim() || process.env.GOOGLE_ADS_DEVELOPER_TOKEN || "";
+
+    if (!effectiveToken) {
+      return res.status(401).json({
+        error: "Please sign in with Google first to list your Google Ads accounts.",
+      });
+    }
+
+    if (!effectiveDevToken) {
+      return res.status(400).json({
+        error:
+          "Google Ads API requires a Developer Token (from Google Ads > Tools & Settings > Setup > API Center) to query customer accounts.",
+      });
+    }
+
+    const response = await fetch(
+      "https://googleads.googleapis.com/v18/customers:listAccessibleCustomers",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${effectiveToken}`,
+          "developer-token": effectiveDevToken,
+        },
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error:
+          data?.error?.message ||
+          `Google Ads API returned ${response.status}`,
+        details: data,
+      });
+    }
+
+    // resourceNames looks like ["customers/1234567890", ...]
+    res.json({
+      resourceNames: data.resourceNames || [],
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      error: error?.message || "Failed to list accessible Google Ads customers.",
+    });
+  }
+});
+
 // Endpoint 8: Execute Atomic Google Ads Campaign + Budget + Keywords + RSA Launch
 app.post("/api/google-ads/launch", async (req, res) => {
   try {
+    const authHeader = req.headers.authorization || "";
+    const headerBearer = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+
     const {
       customerId = "1234567890",
       loginCustomerId = "",
@@ -689,7 +753,10 @@ app.post("/api/google-ads/launch", async (req, res) => {
 
     const cleanCustomerId = String(customerId).replace(/-/g, "").trim();
     const effectiveAccessToken =
-      accessToken.trim() || connectedGoogleAdsSession.accessToken || "";
+      headerBearer ||
+      accessToken.trim() ||
+      connectedGoogleAdsSession.accessToken ||
+      "";
     const effectiveDeveloperToken =
       developerToken.trim() || process.env.GOOGLE_ADS_DEVELOPER_TOKEN || "";
     const effectiveLoginCustomerId =
@@ -704,12 +771,20 @@ app.post("/api/google-ads/launch", async (req, res) => {
 
     const opsCount = mutatePayload.mutateOperations.length;
 
-    // If user selected live or validate_only AND provided credentials, call Google Ads API v18
-    if (
-      (mode === "live" || mode === "validate_only") &&
-      effectiveAccessToken &&
-      effectiveDeveloperToken
-    ) {
+    if (mode === "live" || mode === "validate_only") {
+      if (!effectiveAccessToken) {
+        return res.status(401).json({
+          error:
+            "Please click 'Sign in with Google' in Step 1 to authorize your Google Ads account before running Live or Validate mode.",
+        });
+      }
+      if (!effectiveDeveloperToken) {
+        return res.status(400).json({
+          error:
+            "To push directly to a live Google Ads account, please enter your Google Ads Developer Token (found in Google Ads under Tools & Settings > Setup > API Center), or switch to Sandbox Test mode.",
+        });
+      }
+
       const endpoint = `https://googleads.googleapis.com/v18/customers/${cleanCustomerId}/googleAds:mutate`;
       const headers: Record<string, string> = {
         Authorization: `Bearer ${effectiveAccessToken}`,

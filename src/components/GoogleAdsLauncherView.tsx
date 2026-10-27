@@ -4,16 +4,24 @@ import {
   CheckCircle2,
   ShieldCheck,
   DollarSign,
-  ExternalLink,
   Copy,
   Check,
   Loader2,
   AlertCircle,
   KeyRound,
   Code2,
+  LogOut,
+  RefreshCw,
 } from "lucide-react";
+import { User } from "firebase/auth";
 import { RsaCampaign } from "../data/tidyUpPresets";
 import { buildFullAtomicLaunchPayload } from "../utils/googleAdsGenerators";
+import {
+  initAuth,
+  googleSignIn,
+  getAccessToken,
+  logout,
+} from "../lib/googleAuth";
 
 interface GoogleAdsLauncherViewProps {
   campaign: RsaCampaign;
@@ -38,14 +46,19 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
   >("PHRASE");
   const [launchMode, setLaunchMode] = useState<
     "simulate" | "validate_only" | "live"
-  >("simulate");
+  >("live");
 
-  // OAuth & API Token States
-  const [oauthConnected, setOauthConnected] = useState(false);
+  // Firebase Google OAuth States (with https://www.googleapis.com/auth/adwords scope)
+  const [user, setUser] = useState<User | null>(null);
+  const [oauthToken, setOauthToken] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  // Google Ads Developer Token & Optional MCC
   const [developerToken, setDeveloperToken] = useState("");
-  const [accessToken, setAccessToken] = useState("");
   const [loginCustomerId, setLoginCustomerId] = useState("");
   const [showCredentialsDrawer, setShowCredentialsDrawer] = useState(false);
+  const [accessibleAccounts, setAccessibleAccounts] = useState<string[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
 
   // Launch Execution States
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -54,27 +67,18 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
   const [launchResult, setLaunchResult] = useState<any | null>(null);
   const [copiedJson, setCopiedJson] = useState(false);
 
-  const callbackUrl = `${window.location.origin}/auth/callback`;
-
   useEffect(() => {
-    fetch("/api/google-ads/status")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.connected) setOauthConnected(true);
-      })
-      .catch(() => {});
-
-    const handleMessage = (event: MessageEvent) => {
-      const origin = event.origin;
-      if (!origin.endsWith(".run.app") && !origin.includes("localhost")) {
-        return;
+    const unsubscribe = initAuth(
+      (authedUser, token) => {
+        setUser(authedUser);
+        setOauthToken(token);
+      },
+      () => {
+        setUser(null);
+        setOauthToken(null);
       }
-      if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
-        setOauthConnected(true);
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    );
+    return () => unsubscribe();
   }, []);
 
   const atomicPayload = useMemo(
@@ -88,19 +92,64 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
     [campaign, dailyBudgetCad, biddingStrategy, maxCpcBidCad, keywordMatchType]
   );
 
-  const handleConnectGoogleOAuth = async () => {
+  const handleGoogleLogin = async () => {
+    setIsSigningIn(true);
     setLaunchError(null);
     try {
-      const response = await fetch("/api/google-ads/auth-url");
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        setShowCredentialsDrawer(true);
-        setLaunchError(data.error);
-        return;
+      const result = await googleSignIn();
+      if (result) {
+        setUser(result.user);
+        setOauthToken(result.accessToken);
       }
-      window.open(data.url, "google_ads_oauth_popup", "width=600,height=700");
     } catch (err: any) {
-      setLaunchError(err?.message || "Could not start Google OAuth flow.");
+      setLaunchError(
+        err?.message || "Google sign-in was cancelled or failed. Please try again."
+      );
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleGoogleLogout = async () => {
+    await logout();
+    setUser(null);
+    setOauthToken(null);
+    setAccessibleAccounts([]);
+  };
+
+  const handleFetchAccessibleCustomers = async () => {
+    const token = oauthToken || (await getAccessToken());
+    if (!token) {
+      setLaunchError("Please sign in with Google first.");
+      return;
+    }
+    setIsLoadingAccounts(true);
+    setLaunchError(null);
+    try {
+      const res = await fetch("/api/google-ads/accessible-customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ developerToken }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to list Google Ads accounts.");
+      }
+      const ids = (data.resourceNames || []).map((rn: string) =>
+        rn.replace("customers/", "")
+      );
+      setAccessibleAccounts(ids);
+      if (ids.length > 0) {
+        onUpdateCampaignMeta({ customerId: ids[0] });
+      }
+    } catch (err: any) {
+      setShowCredentialsDrawer(true);
+      setLaunchError(err?.message || "Could not fetch accessible accounts.");
+    } finally {
+      setIsLoadingAccounts(false);
     }
   };
 
@@ -111,13 +160,21 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
     setLaunchResult(null);
 
     try {
+      const token = oauthToken || (await getAccessToken()) || "";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/google-ads/launch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           customerId: campaign.customerId,
           loginCustomerId,
-          accessToken,
+          accessToken: token,
           developerToken,
           mode: launchMode,
           mutatePayload: atomicPayload,
@@ -126,6 +183,9 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
 
       const data = await response.json();
       if (!response.ok || data.error) {
+        if (!developerToken && launchMode !== "simulate") {
+          setShowCredentialsDrawer(true);
+        }
         throw new Error(data.error || "Campaign launch failed.");
       }
 
@@ -153,62 +213,131 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left 7 cols: Budget, Bidding & Account Setup */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Step 1: Connect Google Ads Account */}
+          {/* Step 1: Connect Google Ads Account with Official Google Sign-In */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
               <div>
                 <div className="text-xs font-medium text-teal-700">
-                  Step 1 · Google Ads Account & Customer ID
+                  Step 1 · Live Google Ads Account Authentication
                 </div>
                 <h2 className="text-base font-semibold text-slate-900 mt-0.5">
                   Connect Your TidyUps Google Ads Account
                 </h2>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowCredentialsDrawer((v) => !v)}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5"
                 >
                   <KeyRound className="w-3.5 h-3.5" />
-                  {showCredentialsDrawer ? "Hide API Keys" : "API Tokens & OAuth Setup"}
+                  {showCredentialsDrawer ? "Hide Developer Token" : "Developer Token"}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleConnectGoogleOAuth}
-                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                    oauthConnected
-                      ? "bg-emerald-50 border border-emerald-600 text-emerald-800"
-                      : "bg-slate-900 text-white hover:bg-slate-800"
-                  }`}
-                >
-                  {oauthConnected ? (
-                    <>
+
+                {!oauthToken ? (
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={isSigningIn}
+                    className="inline-flex items-center gap-2.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 font-medium text-xs border border-slate-300 rounded-lg shadow-2xs transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <div className="w-4 h-4 shrink-0">
+                      <svg
+                        version="1.1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 48 48"
+                        className="w-full h-full block"
+                      >
+                        <path
+                          fill="#EA4335"
+                          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                        />
+                        <path
+                          fill="#4285F4"
+                          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                        />
+                        <path fill="none" d="M0 0h48v48H0z" />
+                      </svg>
+                    </div>
+                    <span>
+                      {isSigningIn ? "Signing in..." : "Sign in with Google"}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      Google Ads Connected
-                    </>
-                  ) : (
-                    "Connect Google Ads OAuth"
-                  )}
-                </button>
+                      <span>{user?.email || "Google Ads Connected"}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGoogleLogout}
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                      title="Sign out of Google"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Google Ads Customer ID (10 digits)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-slate-700">
+                    Google Ads Customer ID (10 digits)
+                  </label>
+                  {oauthToken && (
+                    <button
+                      type="button"
+                      onClick={handleFetchAccessibleCustomers}
+                      disabled={isLoadingAccounts}
+                      className="text-[11px] text-teal-700 hover:underline inline-flex items-center gap-1 font-medium"
+                    >
+                      <RefreshCw
+                        className={`w-3 h-3 ${
+                          isLoadingAccounts ? "animate-spin" : ""
+                        }`}
+                      />
+                      Auto-Detect ID
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={campaign.customerId}
                   onChange={(e) =>
                     onUpdateCampaignMeta({ customerId: e.target.value })
                   }
-                  placeholder="123-456-7890"
+                  placeholder="e.g. 123-456-7890"
                   className="w-full px-3 py-2 text-xs font-mono tabular-nums bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-teal-600 focus:bg-white"
                 />
+                {accessibleAccounts.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {accessibleAccounts.map((accId) => (
+                      <button
+                        key={accId}
+                        type="button"
+                        onClick={() =>
+                          onUpdateCampaignMeta({ customerId: accId })
+                        }
+                        className="px-2 py-0.5 text-[11px] font-mono rounded bg-teal-50 text-teal-800 border border-teal-200"
+                      >
+                        Use {accId}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -242,55 +371,41 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
               </div>
             </div>
 
-            {/* Optional Credentials & OAuth Redirect URI Drawer */}
+            {/* Developer Token & MCC Drawer */}
             {showCredentialsDrawer && (
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3 text-xs">
                 <div className="font-semibold text-slate-800">
-                  Direct Google Ads API v18 Credentials (Optional for Sandbox Dry-Run)
+                  Google Ads API Developer Token (Required by Google for Live REST Calls)
                 </div>
                 <p className="text-slate-600 leading-relaxed">
-                  To push live campaigns directly via the Google Ads REST API, Google requires a{" "}
-                  <strong>Google Ads Developer Token</strong> (from your Google Ads Manager Account under{" "}
-                  <em>Tools & Settings → Setup → API Center</em>) and an OAuth 2.0 Client configured with this Redirect URI:
+                  Along with signing in with Google above, the Google Ads API requires your{" "}
+                  <strong>22-character Developer Token</strong> (found in your Google Ads Manager account under{" "}
+                  <em>Tools & Settings → Setup → API Center</em>). If you don't have a Developer Token yet, select{" "}
+                  <strong>Sandbox Test</strong> mode on the right to simulate the full launch pipeline, or export the CSV in 1 click for Google Ads Editor.
                 </p>
-                <div className="p-2.5 bg-white border border-slate-200 rounded font-mono text-[11px] text-slate-700 break-all">
-                  {callbackUrl}
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      Developer Token
+                      Google Ads Developer Token
                     </label>
                     <input
                       type="password"
                       value={developerToken}
                       onChange={(e) => setDeveloperToken(e.target.value)}
-                      placeholder="Enter developer-token"
+                      placeholder="Enter 22-char developer-token"
                       className="w-full px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-md"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      OAuth Access Token (Bearer)
-                    </label>
-                    <input
-                      type="password"
-                      value={accessToken}
-                      onChange={(e) => setAccessToken(e.target.value)}
-                      placeholder="ya29.a0..."
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                      MCC Login Customer ID (Optional)
+                      Manager (MCC) Login Customer ID (Optional)
                     </label>
                     <input
                       type="text"
                       value={loginCustomerId}
                       onChange={(e) => setLoginCustomerId(e.target.value)}
-                      placeholder="Optional MCC ID"
+                      placeholder="Only if accessing via MCC"
                       className="w-full px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-200 rounded-md"
                     />
                   </div>
@@ -450,7 +565,7 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
             </h3>
           </div>
 
-          {/* 6-Step Pipeline Breakdown */}
+          {/* 5-Step Pipeline Breakdown */}
           <div className="space-y-2.5 text-xs">
             <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200/80">
               <span className="font-medium text-slate-800">
@@ -506,9 +621,9 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
             <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg">
               {(
                 [
-                  { id: "simulate", label: "Sandbox Test" },
+                  { id: "live", label: "Live Account" },
                   { id: "validate_only", label: "API Validate" },
-                  { id: "live", label: "Live Mutate" },
+                  { id: "simulate", label: "Sandbox Test" },
                 ] as const
               ).map((m) => (
                 <button
@@ -547,13 +662,23 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
               </div>
               {launchResult.receipt && (
                 <div className="font-mono text-[11px] space-y-1 pt-1 text-emerald-900 tabular-nums">
-                  <div>Budget: {launchResult.receipt.budgetResource} (${launchResult.receipt.dailyBudgetCad}/day)</div>
-                  <div>Campaign: {launchResult.receipt.campaignResource} ({launchResult.receipt.campaignStatus})</div>
                   <div>
-                    Keywords: {launchResult.receipt.positiveKeywordsAttached} Positive · {launchResult.receipt.negativeKeywordsAttached} Negatives
+                    Budget: {launchResult.receipt.budgetResource} ($
+                    {launchResult.receipt.dailyBudgetCad}/day)
                   </div>
                   <div>
-                    Ads Created: {launchResult.receipt.responsiveSearchAdsCreated} Responsive Search Ads (All 5 Descriptions Active)
+                    Campaign: {launchResult.receipt.campaignResource} (
+                    {launchResult.receipt.campaignStatus})
+                  </div>
+                  <div>
+                    Keywords: {launchResult.receipt.positiveKeywordsAttached}{" "}
+                    Positive · {launchResult.receipt.negativeKeywordsAttached}{" "}
+                    Negatives
+                  </div>
+                  <div>
+                    Ads Created:{" "}
+                    {launchResult.receipt.responsiveSearchAdsCreated} Responsive
+                    Search Ads (All 5 Descriptions Active)
                   </div>
                 </div>
               )}
@@ -574,7 +699,9 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
             ) : (
               <>
                 <Rocket className="w-4 h-4" />
-                Create Budget, Keywords & Ads ({atomicPayload.mutateOperations.length} Ops)
+                {launchMode === "live"
+                  ? `Launch to Live Google Ads (${atomicPayload.mutateOperations.length} Ops)`
+                  : `Run Campaign Pipeline (${atomicPayload.mutateOperations.length} Ops)`}
               </>
             )}
           </button>
@@ -593,13 +720,23 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
               Google Ads Conversion Tracking (AW-18539302675)
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Your global <code className="font-mono">gtag.js</code> snippet (<code className="font-mono">AW-18539302675</code>) is active in <code className="font-mono">index.html</code>. Make sure the same tag is also placed on <code className="font-mono">https://app.tidyupscleaning.com/booking</code> to track completed cleaning bookings.
+              Your global <code className="font-mono">gtag.js</code> snippet (
+              <code className="font-mono">AW-18539302675</code>) is active in{" "}
+              <code className="font-mono">index.html</code>. Make sure the same
+              tag is also placed on{" "}
+              <code className="font-mono">
+                https://app.tidyupscleaning.com/booking
+              </code>{" "}
+              to track completed cleaning bookings.
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
-              if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
+              if (
+                typeof window !== "undefined" &&
+                typeof (window as any).gtag === "function"
+              ) {
                 (window as any).gtag("event", "conversion", {
                   send_to: "AW-18539302675",
                   value: dailyBudgetCad,
@@ -664,15 +801,22 @@ export const GoogleAdsLauncherView: React.FC<GoogleAdsLauncherViewProps> = ({
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               Please review the campaign parameters that will be created for{" "}
-              <strong>TidyUps Cleaning</strong>:
+              <strong>TidyUps Cleaning</strong> in mode{" "}
+              <strong className="uppercase">{launchMode}</strong>:
             </p>
             <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 text-xs font-mono tabular-nums text-slate-800">
               <div>Customer ID: {campaign.customerId}</div>
               <div>Campaign: {campaign.campaignName}</div>
               <div>Daily Budget: ${dailyBudgetCad.toFixed(2)} CAD/day</div>
               <div>Max CPC Ceiling: ${maxCpcBidCad.toFixed(2)} CAD</div>
-              <div>Positive Keywords: {campaign.targetKeywords.length} ({keywordMatchType})</div>
-              <div>Negative Keywords: {campaign.negativeKeywords?.length || 0} excluded</div>
+              <div>
+                Positive Keywords: {campaign.targetKeywords.length} (
+                {keywordMatchType})
+              </div>
+              <div>
+                Negative Keywords: {campaign.negativeKeywords?.length || 0}{" "}
+                excluded
+              </div>
               <div>Headlines: {campaign.headlines.length} (≤30 chars)</div>
               <div>Descriptions: {campaign.descriptions.length} (≤90 chars)</div>
               <div>Initial Status: {campaign.adStatus}</div>
